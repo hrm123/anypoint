@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:dotnet="http://www.mulesoft.org/schema/mule/dotnet" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/dotnet http://www.mulesoft.org/schema/mule/dotnet/current/mule-dotnet.xsd">
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="56479" basePath="/api/demographics/education/Newjersey" doc:name="HTTP Request Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration1" host="localhost" port="56479" basePath="/api/demographics/ethnicities/Newjersey" doc:name="HTTP Request Configuration"/>
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" basePath="/NJDetails" doc:name="HTTP Listener Configuration"/>
+    <dotnet:externalConfig name="DotNet__External_Assembly" scope="Singleton" path="C:\Users\Ramm\MyCode\github\anypointdemo\services\PeepsApi\PeepsApi\bin\PeepsApi.dll" doc:name="DotNet: External Assembly"/>
+    <flow name="aggregationFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/" allowedMethods="GET" doc:name="HTTP"/>
+        <scatter-gather doc:name="Scatter-Gather">
+            <processor-chain>
+                <http:request config-ref="HTTP_Request_Configuration" path="/" method="GET" doc:name="GetNJEducation"/>
+                <object-to-string-transformer doc:name="Object to String"/>
+                <logger level="INFO" doc:name="Logger"/>
+            </processor-chain>
+            <processor-chain>
+                <http:request config-ref="HTTP_Request_Configuration1" path="/" method="GET" doc:name="GetNJEthnicities"/>
+                <object-to-string-transformer doc:name="Object to String"/>
+                <logger level="INFO" doc:name="Logger"/>
+            </processor-chain>
+        </scatter-gather>
+        <combine-collections-transformer doc:name="Combine Collections"/>
+        <object-to-string-transformer doc:name="Object to String"/>
+        <dotnet:execute config-ref="DotNet__External_Assembly" methodName="PeepsApi.Helpers.Merge, PeepsApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null||PeepsApi.Helpers.Merge, PeepsApi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null | MergeEthnicityEducation(System.String combinedCollections) -&gt; System.String" doc:name="DotNet"/>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
